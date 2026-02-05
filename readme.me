@@ -1,0 +1,70 @@
+main.tf - Orchestration Layer
+================================
+
+Purpose: Acts as the conductor, importing and configuring the VPC module
+
+Key Feature: Uses a remote Git repository for the VPC module (version-controlled infrastructure as code)
+
+provider.tf - Cloud Connection
+=========================================
+State Management: Uses S3 backend with encryption and lockfiles
+
+Provider Version: Pinned to AWS provider v6.16.0 for stability
+
+variables.tf - Configuration Parameters
+=======================================
+Smart Defaults: Pre-configured CIDR ranges and naming
+
+Three-tier CIDR Strategy:
+
+Public: 10.0.1.0/24, 10.0.2.0/24
+
+Private: 10.0.11.0/24, 10.0.12.0/24
+
+Database: 10.0.21.0/24, 10.0.22.0/24
+
+
+VPC Module Components (vpc.tf, data.tf, locals.tf)
+=============================================
+
+-->locals.tf - Naming Convention Engine
+
+ locals {
+  common_name_suffix = "${var.project_name}-${var.environment}"  # roboshop-dev
+  common_tags = {
+    Project = var.project_name
+    Environment = var.environment
+    Terraform = true  # 📍 Identifies Terraform-managed resources
+  }
+ }
+
+         Consistent Naming: Generates names like roboshop-dev-public-us-east-1a
+
+         Tagging Strategy: Every resource gets standardized tags
+
+---> data.tf - Environment Discovery
+
+          Fetches available AZs dynamically
+
+          Discovers default VPC and main route table from AWS
+
+---> vpc.tf - Resource Blueprint
+
+         VPC: DNS hostnames enabled for internal resolution
+
+         Subnets: Three distinct tiers across two AZs
+
+          Route Tables: Isolated routing per tier
+
+         Intelligent Merging: Custom tags + common tags + name tags
+
+
+roboshop-dev-public-us-east-1a
+└───┴───┴─────┴─────────────
+Project Env  Type     AZ
+
+Human Readable: Immediately understand resource purpose
+
+Machine Parseable: Consistent pattern for automation
+
+Environment Aware: Clear separation of dev/prod
